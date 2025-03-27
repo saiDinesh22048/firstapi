@@ -1,5 +1,4 @@
 streamlit
 st_audiorec
-numpy
-soundfile
+
 
