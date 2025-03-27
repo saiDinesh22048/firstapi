@@ -1,6 +1,5 @@
+streamlit
+st_audiorec
 numpy
-pandas
-scikit-learn
-imbalanced-learn
-fastapi
-uvicorn
+soundfile
+
