@@ -1,125 +1,58 @@
-import streamlit as st
-import numpy as np
-import pandas as pd
-from sklearn.preprocessing import LabelEncoder
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import  StandardScaler
-from imblearn.combine import SMOTEENN
+# streamlit_audio_recorder by stefanrmmr (rs. analytics) - version January 2023
 
 import streamlit as st
-from fastapi import FastAPI
-from pydantic import BaseModel
-import uvicorn
-from typing import Union
+from st_audiorec import st_audiorec
 
-app = FastAPI()
-
-# Define your input data schema for validation
-class PredictionInput(BaseModel):
-    gender: str
-    age: int
-    hypertension: int
-    heart_disease: int
-    ever_married: str
-    work_type: str
-    avg_glucose_level: float
-    bmi: float
-    smoking_status: str
-
-st.title('Cerebral Stroke Predictor')
-
-st.info('This app predicts the cerebral stroke using a machine learning algorithm!')
-
-with st.expander('Data'):
-  st.write('**Raw data**')
-  df = pd.read_csv('dataset.csv')
-  df
+# DESIGN implement changes to the standard streamlit UI/UX
+# --> optional, not relevant for the functionality of the component!
+st.set_page_config(page_title="streamlit_audio_recorder")
+# Design move app further up and remove top padding
+st.markdown('''<style>.css-1egvi7u {margin-top: -3rem;}</style>''',
+            unsafe_allow_html=True)
+# Design change st.Audio to fixed height of 45 pixels
+st.markdown('''<style>.stAudio {height: 45px;}</style>''',
+            unsafe_allow_html=True)
+# Design change hyperlink href link color
+st.markdown('''<style>.css-v37k9u a {color: #ff4c4b;}</style>''',
+            unsafe_allow_html=True)  # darkmode
+st.markdown('''<style>.css-nlntq9 a {color: #ff4c4b;}</style>''',
+            unsafe_allow_html=True)  # lightmode
 
 
-  st.write('**X**')
-  df = df.drop('id', axis=1)
-  df = df.drop('Residence_type', axis=1)
-  df = df[(df['age'] >= 25) & (df['bmi'] <= 60)]
-  df['bmi'].fillna(df['bmi'].mean(), inplace=True)
-  X_raw= df.drop('stroke', axis=1)
-  X_raw
+def audiorec_demo_app():
 
-  st.write('**y**')
-  y_raw = df.stroke
-  y_raw
+    # TITLE and Creator information
+    st.title('streamlit audio recorder')
+    st.markdown('Implemented by '
+        '[Stefan Rummer](https://www.linkedin.com/in/stefanrmmr/) - '
+        'view project source code on '
+                
+        '[GitHub](https://github.com/stefanrmmr/streamlit-audio-recorder)')
+    st.write('\n\n')
 
-with st.expander('Data visualization'):
-  st.scatter_chart(data=df, x='hypertension', y='age', color='stroke')
-  
-@app.post("/predict/")
-def predict(input_data: PredictionInput):
-    # Create a DataFrame for the input features
-    label_encoder = LabelEncoder()
-    data = {'gender': input_data.gender,
-            'age': input_data.age,
-            'hypertension':input_data.hypertension,
-            'heart_disease': input_data.heart_disease,
-            'ever_married': input_data.ever_married,
-            'work_type': input_data.work_type,
-            'avg_glucose_level': input_data.avg_glucose_level,
-            'bmi': input_data.bmi,
-            'smoking_status':input_data.smoking_status}
-    
-    
-    input_df = pd.DataFrame(data, index=[0])
-    input_values = pd.concat([input_df, X_raw], axis=0)
-    
-    input_values['gender'] = label_encoder.fit_transform(input_values['gender'])
-    
-    input_values['hypertension'] = label_encoder.fit_transform(input_values['hypertension'])
-    
-    input_values['heart_disease'] = label_encoder.fit_transform(input_values['heart_disease'])
-    
-    input_values['ever_married'] = label_encoder.fit_transform(input_values['ever_married'])
-    
-    input_values['smoking_status'] = input_values['smoking_status'].fillna('Unknown')
-    
-    input_values['smoking_status'] = label_encoder.fit_transform(input_values['smoking_status'])
-    
-    input_values['work_type'] = label_encoder.fit_transform(input_values['work_type'])
-    
-    
-    scaler =StandardScaler()
-    input_values = scaler.fit_transform(input_values)
-    
-    arr = np.array(input_values)
-    input =arr[0, :]
-    input_values =arr[1:, :]
-    
-    with st.expander('Input features'):
-      st.write('**Input values**')
-      input_df
-      st.write('**Combined input data**')
-      input_values
-    
-    smote_enn = SMOTEENN()
-    X_res1, y_res1 = smote_enn.fit_resample(input_values ,y_raw)
-    input = input.reshape(1, -1)
-    
-    from sklearn.ensemble import RandomForestClassifier
-    from sklearn.model_selection import train_test_split
-    from sklearn.metrics import accuracy_score, classification_report
-    from sklearn.metrics import confusion_matrix
-    from sklearn.metrics import roc_curve,auc
-    
-    # Splitting the data into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(X_res1, y_res1, test_size=0.2, random_state=42)
-    
-    # Initializing the Random Forest classifier
-    rf_classifier = RandomForestClassifier(random_state=42)
-    
-    # Training the classifier
-    rf_classifier.fit(X_train, y_train)
-    
-    # Making predictions
-    y = rf_classifier.predict(input)
-    if y[0]==0:
-      return {"prediction": "congrats,you have less risk for cerebral stroke"}
-    else:
-      return {"prediction": "you have high risk for cerebral stroke.please consult a neurologist immideatly"}
-      
+    # TUTORIAL: How to use STREAMLIT AUDIO RECORDER?
+    # by calling this function an instance of the audio recorder is created
+    # once a recording is completed, audio data will be saved to wav_audio_data
+
+    wav_audio_data = st_audiorec() # tadaaaa! yes, that's it! :D
+
+    # add some spacing and informative messages
+    col_info, col_space = st.columns([0.57, 0.43])
+    with col_info:
+        st.write('\n')  # add vertical spacer
+        st.write('\n')  # add vertical spacer
+        st.write('The .wav audio data, as received in the backend Python code,'
+                 ' will be displayed below this message as soon as it has'
+                 ' been processed. [This informative message is not part of'
+                 ' the audio recorder and can be removed easily] 🎈')
+
+    if wav_audio_data is not None:
+        # display audio data as received on the Python side
+        col_playback, col_space = st.columns([0.58,0.42])
+        with col_playback:
+            st.audio(wav_audio_data, format='audio/wav')
+
+
+if __name__ == '__main__':
+    # call main function
+    audiorec_demo_app()
